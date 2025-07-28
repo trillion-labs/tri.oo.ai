@@ -1,31 +1,30 @@
 import json
 from typing import List, Dict, Any
 from datetime import datetime
-
-from vllm import LLM, SamplingParams
+from openai import OpenAI
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.panel import Panel
+from rich.markdown import Markdown
 
 from .types import ToolCall
 from .parser import MessageParser
 from .tools import search_web
 
 
-class WebAssistant:
-    """Web search assistant using vLLM"""
+class WebAssistantAPI:
+    """Web search assistant using OpenAI-compatible API"""
     
     SYSTEM_PROMPT = """You are a helpful assistant that searches the web and answers questions based on search results. 
 You excel at finding information through strategic searching. Current time is {time}"""
     
-    def __init__(self, llm: LLM, available_tools: Dict[str, Any] = None):
-        self.llm = llm
-        self.available_tools = available_tools or {"search": search_web}
-        self.sampling_params = SamplingParams(
-            temperature=0.7,
-            max_tokens=16384,
-            skip_special_tokens=False,
+    def __init__(self, base_url: str = "http://localhost:8000/v1", model: str = "trillionlabs/Tri-7B-Search-preview"):
+        self.client = OpenAI(
+            base_url=base_url,
+            api_key="dummy-key",  # vLLM doesn't require a real key for local serving
         )
+        self.model = model
+        self.available_tools = {"search": search_web}
         self.console = Console()
     
     def process_tool_calls(self, tool_calls: List[ToolCall]) -> List[Dict[str, Any]]:
@@ -76,7 +75,7 @@ You excel at finding information through strategic searching. Current time is {t
     def run_with_tools(self, messages: List[Dict[str, Any]], max_iterations: int = 3) -> str:
         """Run assistant with tool calling capabilities"""
         for iteration in range(max_iterations + 1):
-            # Get assistant response
+            # Get assistant response using OpenAI API
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -84,9 +83,18 @@ You excel at finding information through strategic searching. Current time is {t
                 console=self.console
             ) as progress:
                 task = progress.add_task("Thinking...", total=None)
-                outputs = self.llm.chat(messages=[messages], sampling_params=self.sampling_params)
-                response_text = outputs[0].outputs[0].text
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=8192,
+                    extra_body={
+                        "skip_special_tokens": False
+                    }
+                )
                 progress.update(task, completed=True)
+            
+            response_text = response.choices[0].message.content
             
             # Parse the response
             parsed = MessageParser.parse_message(response_text)
