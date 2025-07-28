@@ -1,6 +1,6 @@
 # tri.oo.ai
 
-**tri.oo.ai** is a local, open-source showcase of what you can build with **[Tri-7B-Search](https://huggingface.co/trillionlabs/Tri-7B-Search-preview)**, an efficient LLM with search capabilities 💚. It brings a familiar chat-based interface — inspired by [oo.ai](https://oo.ai).
+**tri.oo.ai** is a local, open-source showcase of what you can build with **[Tri-7B-Search](https://huggingface.co/trillionlabs/Tri-7B-Search-preview)**, an efficient LLM with internet search capabilities 🌐💚. It brings a familiar chat-based interface — inspired by [oo.ai](https://oo.ai).
 
 ## 🔍 What is tri.oo.ai?
 
